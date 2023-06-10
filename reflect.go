@@ -673,6 +673,9 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
+
+	extraMaps := strings.Split(f.Tag.Get("jsonschema_maps"), ";")
+	t.extraMapKeywords(extraMaps)
 }
 
 // read struct tags for generic keyworks
@@ -901,6 +904,15 @@ func (t *Schema) arrayKeywords(tags []string) {
 	}
 }
 
+func (t *Schema) extraMapKeywords(tags []string) {
+	for _, tag := range tags {
+		nameValue := strings.SplitN(tag, "=", 2)
+		if len(nameValue) == 2 {
+			t.setExtra(nameValue[0], nameValue[1])
+		}
+	}
+}
+
 func (t *Schema) extraKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.SplitN(tag, "=", 2)
@@ -929,6 +941,10 @@ func (t *Schema) setExtra(key, val string) {
 		switch key {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
+		case "x-oapi-codegen-extra-tags":
+			var raw map[string]string
+			json.Unmarshal([]byte(val), &raw)
+			t.Extras[key] = raw
 		default:
 			var x interface{}
 			if val == "true" {
